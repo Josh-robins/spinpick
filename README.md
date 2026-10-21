@@ -32,7 +32,7 @@ Plain HTML, CSS and JavaScript. No build step, no backend, no accounts.
 
 ## How sharing works
 
-Press **Share** and the whole wheel (title, options, weights, settings) is packed into the link after the `#`.
+Press **Share** and the whole wheel (title, options, weights, settings) is compressed and packed into the link after the `#`.
 Anyone opening the link sees the same wheel and spins it on their own device.
 Nothing is uploaded to a server, so each person's spin is independent: the result is **not** synced live between devices.
 (Live shared spinning would need a small backend such as Firebase or Supabase.)

@@ -112,6 +112,26 @@
     const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
     return JSON.parse(new TextDecoder().decode(bytes));
   }
+  const SHARE_LZ_PREFIX = 'lz:';
+  function shareEncode(obj) {
+    if (window.LZString && typeof window.LZString.compressToEncodedURIComponent === 'function') {
+      try {
+        const json = JSON.stringify(obj);
+        const c = window.LZString.compressToEncodedURIComponent(json);
+        if (c) return SHARE_LZ_PREFIX + c;
+      } catch (e) { /* fall back to legacy format */ }
+    }
+    return b64encode(obj);
+  }
+  function shareDecode(payload) {
+    if (payload.startsWith(SHARE_LZ_PREFIX)) {
+      if (!(window.LZString && typeof window.LZString.decompressFromEncodedURIComponent === 'function')) return null;
+      const json = window.LZString.decompressFromEncodedURIComponent(payload.slice(SHARE_LZ_PREFIX.length));
+      if (typeof json !== 'string') return null;
+      try { return JSON.parse(json); } catch (e) { return null; }
+    }
+    return b64decode(payload);
+  }
   function toShare() {
     const s = state.settings;
     return {
@@ -129,13 +149,15 @@
     });
   }
   function shareUrl() {
-    return location.href.split('#')[0] + '#w=' + b64encode(toShare());
+    return location.href.split('#')[0] + '#w=' + shareEncode(toShare());
   }
   function readHash() {
     const m = /[#&]w=([^&]+)/.exec(location.hash);
     if (!m) return null;
     try {
-      const st = fromShareObj(b64decode(m[1]));
+      const decoded = shareDecode(m[1]);
+      if (!decoded) return null;
+      const st = fromShareObj(decoded);
       return st.items.length ? st : null;
     } catch (e) {
       return null;
