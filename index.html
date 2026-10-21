@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SpinPick – Decision Wheel</title>
+  <meta name="description" content="Customisable decision wheel. Add your own options, spin, and share the wheel with a link.">
+  <meta name="theme-color" content="#6c4cf1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A1%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span aria-hidden="true">🎡</span> SpinPick</div>
+    <div class="top-actions">
+      <button id="btnSound" class="icon-btn" title="Sound on/off" aria-label="Toggle sound">🔊</button>
+      <button id="btnTheme" class="icon-btn" title="Light / dark" aria-label="Toggle light or dark theme">🌓</button>
+      <button id="btnFull" class="icon-btn" title="Fullscreen (great for projectors)" aria-label="Fullscreen">⛶</button>
+      <button id="btnShare" class="btn primary">🔗 Share</button>
+    </div>
+  </header>
+
+  <div id="sharedBanner" class="banner" hidden>
+    <span>👋 You opened a shared wheel. Spin it, or tweak it. Changes are not saved unless you keep a copy.</span>
+    <button id="btnKeep" class="btn small">Keep my own copy</button>
+  </div>
+
+  <noscript><p style="padding:1rem">This app needs JavaScript to run.</p></noscript>
+
+  <main class="layout">
+    <section class="stage" aria-label="Wheel">
+      <input id="titleInput" class="title-input" maxlength="80" aria-label="Wheel title" placeholder="Name your wheel">
+
+      <div id="wheelWrap" class="wheel-wrap">
+        <div id="pointer" class="pointer" aria-hidden="true"></div>
+        <canvas id="wheel" aria-label="Spinning decision wheel"></canvas>
+      </div>
+
+      <button id="spinBtn" class="btn primary big">SPIN</button>
+      <p id="lastPick" class="last-pick" aria-live="polite">Tap the wheel, press the button, or hit Space.</p>
+      <button id="btnExitFull" class="btn exit-full">Exit fullscreen</button>
+    </section>
+
+    <section class="panel" aria-label="Customise">
+      <div class="tabs" role="tablist">
+        <button role="tab" class="tab active" data-tab="options">Options</button>
+        <button role="tab" class="tab" data-tab="style">Style</button>
+        <button role="tab" class="tab" data-tab="wheels">Wheels</button>
+        <button role="tab" class="tab" data-tab="history">History</button>
+      </div>
+
+      <!-- OPTIONS -->
+      <div class="pane active" data-pane="options">
+        <form id="addForm" class="row">
+          <input id="addInput" type="text" maxlength="60" placeholder="Add an option, then press Enter" autocomplete="off">
+          <button class="btn primary" type="submit">Add</button>
+        </form>
+        <p id="optCount" class="muted small-text"></p>
+        <ul id="optList" class="opt-list"></ul>
+
+        <label class="check"><input id="chkRemove" type="checkbox"> Remove the winner after each spin <span class="muted">(so nobody goes twice)</span></label>
+
+        <div class="row wrap">
+          <button id="btnReset" class="btn">↺ Reset (bring everyone back)</button>
+          <button id="btnClear" class="btn danger">Clear all</button>
+        </div>
+
+        <details class="fold">
+          <summary>Quick fill: Group 1…N</summary>
+          <div class="row">
+            <input id="fillPrefix" type="text" value="Group" maxlength="30" aria-label="Prefix">
+            <input id="fillCount" type="number" min="1" max="100" value="8" aria-label="How many">
+            <button id="fillBtn" class="btn">Generate</button>
+          </div>
+        </details>
+
+        <details class="fold">
+          <summary>Paste a list or import a file</summary>
+          <textarea id="bulkText" rows="5" placeholder="One name per line"></textarea>
+          <div class="row wrap">
+            <button id="bulkAdd" class="btn">Add to wheel</button>
+            <button id="bulkReplace" class="btn">Replace wheel</button>
+          </div>
+          <label class="file-label">Import .txt / .csv file
+            <input id="fileInput" type="file" accept=".txt,.csv,text/plain,text/csv">
+          </label>
+        </details>
+        <p class="muted small-text">Weight = how big the slice is. Weight 2 is twice as likely as weight 1.</p>
+      </div>
+
+      <!-- STYLE -->
+      <div class="pane" data-pane="style">
+        <label class="field">Colour palette
+          <select id="selPalette">
+            <option value="vibrant">Vibrant</option>
+            <option value="pastel">Pastel</option>
+            <option value="ocean">Ocean</option>
+            <option value="sunset">Sunset</option>
+            <option value="mono">Monochrome</option>
+          </select>
+        </label>
+        <label class="field">Theme
+          <select id="selTheme">
+            <option value="auto">Match my device</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+        <label class="field">Spin length: <output id="durOut">6</output> seconds
+          <input id="rngDuration" type="range" min="2" max="15" step="1" value="6">
+        </label>
+        <label class="check"><input id="chkSound" type="checkbox"> Sounds (ticking and fanfare)</label>
+        <label class="check"><input id="chkConfetti" type="checkbox"> Confetti on the result</label>
+      </div>
+
+      <!-- WHEELS -->
+      <div class="pane" data-pane="wheels">
+        <h3>Ready-made wheels</h3>
+        <div id="tplGrid" class="tpl-grid"></div>
+
+        <h3>My saved wheels</h3>
+        <form id="saveForm" class="row">
+          <input id="saveName" type="text" maxlength="40" placeholder="Name to save this wheel as" autocomplete="off">
+          <button class="btn primary" type="submit">Save</button>
+        </form>
+        <ul id="savedList" class="saved-list"></ul>
+        <p class="muted small-text">Saved wheels live in this browser only. Use Share to send one to someone else.</p>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="pane" data-pane="history">
+        <div class="row wrap">
+          <button id="btnCopyHist" class="btn">Copy as list</button>
+          <button id="btnClearHist" class="btn danger">Clear history</button>
+        </div>
+        <ol id="histList" class="hist-list"></ol>
+        <p id="histEmpty" class="muted">No spins yet. Results appear here in order, like a schedule.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">Made with HTML, CSS and JavaScript. No sign-up, no tracking.</footer>
+
+  <!-- Result dialog -->
+  <dialog id="resultDlg" aria-labelledby="resultText">
+    <div class="res-inner">
+      <div class="res-kicker">The wheel picked</div>
+      <div id="resultText" class="res-text"></div>
+      <div id="resultNote" class="muted"></div>
+      <div class="row center">
+        <button id="resAgain" class="btn primary">Spin again</button>
+        <button id="resClose" class="btn">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Share dialog -->
+  <dialog id="shareDlg" aria-labelledby="shareTitle">
+    <div class="res-inner left">
+      <h3 id="shareTitle">Share this wheel</h3>
+      <p class="muted">Anyone who opens this link gets the same wheel and can spin it on their own device.</p>
+      <input id="shareUrl" type="text" readonly>
+      <p id="shareWarn" class="muted small-text" hidden>This link is quite long. Some chat apps may cut it off; try fewer options if so.</p>
+      <div class="row wrap">
+        <button id="shareCopy" class="btn primary">Copy link</button>
+        <button id="shareNative" class="btn" hidden>Share…</button>
+        <button id="shareClose" class="btn">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
